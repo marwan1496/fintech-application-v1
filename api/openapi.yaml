@@ -1,0 +1,191 @@
+openapi: 3.1.0
+info:
+  title: Axis Task API
+  version: "1.0.0"
+  description: API for managing accounts with User authentication.
+servers:
+  - url: http://localhost:3001
+tags:
+  - name: Authentication
+    description: Authentication API's
+  - name: Accounts
+    description: Accounts API's
+paths:
+  /login:
+    post:
+      tags:
+        - Authentication
+      summary: User login to generate a JWT token.
+      description: Validate User credentials and return a JWT token with an User role claim.
+      operationId: login
+      x-eov-operation-handler: authController
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: JWT token generated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        "401":
+          description: Invalid credentials.
+  /accounts:
+    post:
+      tags:
+        - Accounts
+      summary: Create a new account.
+      operationId: createAccount
+      x-eov-operation-handler: accountController
+      description: Creates a new account with an initial balance of 0 and returns the account ID.
+
+      responses:
+        "201":
+          description: Account created successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  account_id:
+                    type: integer
+        "403":
+          description: Unauthorized access.
+      security:
+        - bearerAuth: []
+  /accounts/{id}/deposit:
+    post:
+      tags:
+        - Accounts
+      summary: Deposit funds into an account.
+      operationId: deposit
+      x-eov-operation-handler: accountController
+      description: Deposit a specified amount into the account and return a unique transaction ID.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: The account ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  description: The amount to deposit (must be a positive value).
+      responses:
+        "200":
+          description: Funds deposited successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transaction_id:
+                    type: string
+        "400":
+          description: Invalid deposit amount.
+        "404":
+          description: Account not found.
+        "403":
+          description: Unauthorized access.
+  /accounts/{id}/withdraw:
+    post:
+      tags:
+        - Accounts
+      summary: Withdraw funds from an account.
+      operationId: withdraw
+      x-eov-operation-handler: accountController
+      description: Withdraw a specified amount from the account and return a unique transaction ID.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: The account ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  description: The amount to withdraw (must be a positive value).
+      responses:
+        "200":
+          description: Withdrawal successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transaction_id:
+                    type: string
+        "400":
+          description: Invalid withdrawal amount or insufficient funds.
+        "404":
+          description: Account not found.
+        "403":
+          description: Unauthorized access.
+  /accounts/{id}/balance:
+    get:
+      tags:
+        - Accounts
+      summary: Get account balance.
+      operationId: getBalance
+      x-eov-operation-handler: accountController
+      description: Retrieve the current balance of the specified account.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: The account ID.
+      responses:
+        "200":
+          description: Balance retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: number
+        "404":
+          description: Account not found.
+        "403":
+          description: Unauthorized access.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
